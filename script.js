@@ -1,6 +1,8 @@
 const btnContainer = document.querySelector("#button-container");
 const display = document.querySelector("#display-container");
 let num1, num2, operator;
+let currentInput = "";
+// dual class names
 const btnLabels = [
   { class: "clear", text: "C" },
   { class: "divide operator", text: "&divide;" },
@@ -20,7 +22,7 @@ const btnLabels = [
   { class: "zero number", text: 0 },
   { class: "decimal", text: "." },
   { class: "sign operator", text: "&plusmn;" },
-  { class: "equal operator", text: "&equals;" },
+  { class: "equal", text: "&equals;" },
 ];
 
 const add = function (num1, num2) {
@@ -47,45 +49,77 @@ const createButtons = function (btnLabels) {
     btn.setAttribute(`class`, `${label.class}`);
     if (label.text[0] === "&") btn.innerHTML = label.text;
     else btn.textContent = label.text;
+    // number click
     if (label.class.includes("number")) {
-      btn.addEventListener("click", () => (display.textContent += label.text));
-    } else if (label.class.includes("operator")) {
       btn.addEventListener("click", () => {
-        num1 = display.textContent;
-        operator = label.class.split(" ")[0];
-        // num1 & operator in display
-        display.textContent += " " + btn.textContent + " ";
+        currentInput += label.text;
+        display.textContent += label.text;
+      });
+    }
+    // operator click
+    else if (label.class.includes("operator")) {
+      btn.addEventListener("click", () => {
+        let newOperator = label.class.split(" ")[0];
+        // display result when num2 entered
+        if (operator && currentInput) {
+          num2 = currentInput;
+          let result = operate(operator, num1, num2);
+          display.textContent = result + " " + btn.textContent + " ";
+          operator = newOperator;
+          num1 = result;
+        }
+        // operator display
+        else if (display.textContent != "") {
+          if (currentInput != "") num1 = currentInput;
+          // num1 then operator
+          if (currentInput != "") {
+            operator = newOperator;
+            display.textContent += " " + btn.textContent + " ";
+          }
+          // multiple operators entered simultaneously overwrites old
+          else if (currentInput == "") {
+            // overwrites
+            if (operator) {
+              display.textContent =
+                display.textContent.slice(0, -2) + btn.textContent + " ";
+              operator = newOperator;
+            }
+            // operator after clicking equal
+            else {
+              display.textContent += " " + btn.textContent + " ";
+              operator = newOperator;
+            }
+          }
+        }
+        currentInput = "";
+      });
+    } else if (label.class == "equal") {
+      btn.addEventListener("click", () => {
+        let result = operate(operator, num1, currentInput);
+        display.textContent = result;
+        num1 = result;
+        operator = null;
+        currentInput = "";
       });
     }
     btnContainer.appendChild(btn);
   }
 };
 
-/* I have buttons now. I need to make them function when clicking
- 1) the first num has to be displayed when num buttons are pressed. Has to keep on appending to the num1 value until an
- operator is clicked.
-  ```
-  btn.addEventListener("click", ()=>{})
-  ```
-
- 2) when operator is clicked, the operator has to be stored and displayed along with num1
- 3) Now it has to take num2 but only when num1 is already taken, so check if num1 is notempty and only then take num2
- 4) when operator is clicked again (check if operator is empty), the operate function has to be called on num1, op, num2. The result has to be stored in 
- num1, new operator in operator and num2 has to be null. num1 along with the operator has to be displayed.
- 5) when equal operator is pressed, same as step 4 except only display the final result or num1.
+/*
 
 */
 const populateDigits = function () {};
 
 const operate = function (operator, num1, num2) {
   switch (operator) {
-    case "+":
+    case "plus":
       return add(num1, num2);
-    case "-":
+    case "minus":
       return subtract(num1, num2);
-    case "*":
+    case "multiply":
       return multiply(num1, num2);
-    case "/":
+    case "divide":
       return divide(num1, num2);
     default:
       return null;
