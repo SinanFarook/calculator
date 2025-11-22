@@ -41,75 +41,82 @@ const divide = function (num1, num2) {
   return parseInt(num1) / parseInt(num2);
 };
 
-// creating all buttons in the array
+// create all buttons in array
 
 const createButtons = function (btnLabels) {
   for (const label of btnLabels) {
     let btn = document.createElement("button");
-    btn.setAttribute(`class`, `${label.class}`);
+    btn.className = label.class;
+
+    // Handle Button Text Rendering
     if (label.text[0] === "&") btn.innerHTML = label.text;
     else btn.textContent = label.text;
-    // number click
+
+    // Add Event Listeners
     if (label.class.includes("number")) {
-      btn.addEventListener("click", () => {
-        currentInput += label.text;
-        display.textContent += label.text;
-      });
+      btn.addEventListener("click", () => handleNumber(label.text));
+    } else if (label.class.includes("operator")) {
+      btn.addEventListener("click", () =>
+        handleOperator(label.class, btn.textContent)
+      );
+    } else if (label.class.includes("equal")) {
+      btn.addEventListener("click", () => handleEqual());
+    } else if (label.class.includes("clear")) {
+      btn.addEventListener("click", () => handleClear);
     }
-    // operator click
-    else if (label.class.includes("operator")) {
-      btn.addEventListener("click", () => {
-        let newOperator = label.class.split(" ")[0];
-        // display result when num2 entered
-        if (operator && currentInput) {
-          num2 = currentInput;
-          let result = operate(operator, num1, num2);
-          display.textContent = result + " " + btn.textContent + " ";
-          operator = newOperator;
-          num1 = result;
-        }
-        // operator display
-        else if (display.textContent != "") {
-          if (currentInput != "") num1 = currentInput;
-          // num1 then operator
-          if (currentInput != "") {
-            operator = newOperator;
-            display.textContent += " " + btn.textContent + " ";
-          }
-          // multiple operators entered simultaneously overwrites old
-          else if (currentInput == "") {
-            // overwrites
-            if (operator) {
-              display.textContent =
-                display.textContent.slice(0, -2) + btn.textContent + " ";
-              operator = newOperator;
-            }
-            // operator after clicking equal
-            else {
-              display.textContent += " " + btn.textContent + " ";
-              operator = newOperator;
-            }
-          }
-        }
-        currentInput = "";
-      });
-    } else if (label.class == "equal") {
-      btn.addEventListener("click", () => {
-        let result = operate(operator, num1, currentInput);
-        display.textContent = result;
-        num1 = result;
-        operator = null;
-        currentInput = "";
-      });
-    }
+
     btnContainer.appendChild(btn);
   }
 };
 
-/*
+// Handler Functions
 
-*/
-const populateDigits = function () {};
+const handleNumber = function (value) {
+  currentInput += value;
+  display.textContent += value;
+};
+
+const handleOperator = function (opClass, opSymbol) {
+  // GUARD CLAUSE: Don't allow operator at start
+  if (display.textContent === "") return;
+  const newOperator = opClass.split(" ")[0];
+  // Scenario: Chaining (1+2-...)
+  if (operator && currentInput) {
+    num2 = currentInput;
+    const result = operate(operator, num1, num2);
+    display.textContent = result + " " + opSymbol + " ";
+    operator = newOperator;
+    num1 = result;
+  }
+  // Scenario: Overwriting Operator
+  else if (currentInput === "" && operator) {
+    display.textContent = display.textContent.slice(0, -2) + opSymbol + " ";
+    operator = newOperator;
+  }
+  // Scenario: Operator after Equals
+  else if (currentInput === "" && !operator) {
+    display.textContent += " " + opSymbol + " ";
+    operator = newOperator;
+  }
+  // Standard (12 +)
+  else {
+    num1 = currentInput;
+    operator = newOperator;
+    display.textContent += " " + opSymbol + " ";
+  }
+  // When operator clicked no number as input
+  currentInput = "";
+};
+
+const handleEqual = function () {
+  // GUARD CLAUSE: Don't run if no expression
+  if (!currentInput || !operator) return;
+  const result = operate(operator, num1, currentInput);
+  display.textContent = result;
+  num1 = result;
+  operator = null;
+  currentInput = "";
+};
 
 const operate = function (operator, num1, num2) {
   switch (operator) {
