@@ -20,25 +20,28 @@ const btnLabels = [
   { class: "two number", text: 2 },
   { class: "three number", text: 3 },
   { class: "zero number", text: 0 },
-  { class: "decimal", text: "." },
+  { class: "decimal number", text: "." },
   { class: "sign operator", text: "&plusmn;" },
   { class: "equal", text: "&equals;" },
 ];
 
 const add = function (num1, num2) {
-  return parseInt(num1) + parseInt(num2);
+  return parseFloat(num1) + parseFloat(num2);
 };
 
 const subtract = function (num1, num2) {
-  return parseInt(num1) - parseInt(num2);
+  return parseFloat(num1) - parseFloat(num2);
 };
 
 const multiply = function (num1, num2) {
-  return parseInt(num1) * parseInt(num2);
+  return parseFloat(num1) * parseFloat(num2);
 };
 
 const divide = function (num1, num2) {
-  return parseInt(num1) / parseInt(num2);
+  if (parseFloat(num2) === 0) {
+    return "Can't Break Me";
+  }
+  return parseFloat(num1) / parseFloat(num2);
 };
 
 // create all buttons in array
@@ -72,18 +75,33 @@ const createButtons = function (btnLabels) {
 // Handler Functions
 
 const handleNumber = function (value) {
+  // handle multiple decimal points
+  if (value === "." && currentInput.includes(".")) return;
   currentInput += value;
+  if (display.textContent === "Can't Break Me") {
+    display.textContent = value;
+    return;
+  }
   display.textContent += value;
 };
 
 const handleOperator = function (opClass, opSymbol) {
   // GUARD CLAUSE: Don't allow operator at start
-  if (display.textContent === "") return;
+  if (display.textContent === "" || display.textContent === "Can't Break Me")
+    return;
   const newOperator = opClass.split(" ")[0];
   // Scenario: Chaining (1+2-...)
   if (operator && currentInput) {
     num2 = currentInput;
     const result = operate(operator, num1, num2);
+    if (result === "Can't Break Me") {
+      display.textContent = result;
+      operator = null;
+      num1 = null;
+      num2 = null;
+      currentInput = "";
+      return;
+    }
     display.textContent = result + " " + opSymbol + " ";
     operator = newOperator;
     num1 = result;
@@ -121,16 +139,23 @@ const handleEqual = function () {
 const operate = function (operator, num1, num2) {
   switch (operator) {
     case "plus":
-      return add(num1, num2);
+      return roundResult(add(num1, num2));
     case "minus":
-      return subtract(num1, num2);
+      return roundResult(subtract(num1, num2));
     case "multiply":
-      return multiply(num1, num2);
+      return roundResult(multiply(num1, num2));
     case "divide":
-      return divide(num1, num2);
+      return roundResult(divide(num1, num2));
     default:
       return null;
   }
+};
+
+// Helper Functions
+
+const roundResult = function (result) {
+  // upto 3 places
+  return Math.round(result * 1000) / 1000;
 };
 
 console.log(add(1, 1));
