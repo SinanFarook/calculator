@@ -1,12 +1,21 @@
+/*
+TO DO:
+
+- Handle after Equal case for Percent
+- Entering a number after equals does not append but starts a fresh calculation with that number as num1
+- Add Delete/backspace button
+
+*/
+
 const btnContainer = document.querySelector("#button-container");
 const display = document.querySelector("#display-container");
-let num1, num2, operator;
+let num1, operator;
 let currentInput = "";
 // dual class names
 const btnLabels = [
   { class: "clear", text: "C" },
   { class: "divide operator", text: "&divide;" },
-  { class: "percent operator", text: "&percnt;" },
+  { class: "percent", text: "&percnt;" },
   { class: "multiply operator", text: "&times;" },
   { class: "seven number", text: 7 },
   { class: "eight number", text: 8 },
@@ -65,7 +74,9 @@ const createButtons = function (btnLabels) {
     } else if (label.class.includes("equal")) {
       btn.addEventListener("click", () => handleEqual());
     } else if (label.class.includes("clear")) {
-      btn.addEventListener("click", () => handleClear);
+      btn.addEventListener("click", () => handleClear());
+    } else if (label.class.includes("percent")) {
+      btn.addEventListener("click", () => handlePercent());
     }
 
     btnContainer.appendChild(btn);
@@ -92,13 +103,11 @@ const handleOperator = function (opClass, opSymbol) {
   const newOperator = opClass.split(" ")[0];
   // Scenario: Chaining (1+2-...)
   if (operator && currentInput) {
-    num2 = currentInput;
-    const result = operate(operator, num1, num2);
+    const result = operate(operator, num1, currentInput);
     if (result === "Can't Break Me") {
       display.textContent = result;
       operator = null;
       num1 = null;
-      num2 = null;
       currentInput = "";
       return;
     }
@@ -134,6 +143,33 @@ const handleEqual = function () {
   num1 = result;
   operator = null;
   currentInput = "";
+};
+
+const handlePercent = function () {
+  // GUARD CLAUSE: Don't allow operator at start
+  if (display.textContent === "" || display.textContent === "Can't Break Me")
+    return;
+  // After clicking Equals
+  if (currentInput === "" && !operator) currentInput = num1;
+
+  const percentRes = divide(currentInput, 100);
+  // Scenario: chaining
+  if (currentInput && operator) {
+    display.textContent =
+      display.textContent.slice(0, -currentInput.length) + percentRes;
+  }
+  // Scenario: single number
+  else {
+    display.textContent = percentRes;
+  }
+  currentInput = percentRes.toString();
+};
+
+const handleClear = function () {
+  display.textContent = "";
+  num1 = null;
+  currentInput = "";
+  operator = null;
 };
 
 const operate = function (operator, num1, num2) {
